@@ -1,0 +1,319 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Security Dashboard | IoT Fingerprint</title>
+    <link rel="stylesheet" href="style.css">
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600&display=swap" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://unpkg.com/@phosphor-icons/web"></script>
+</head>
+
+<body>
+    <div class="app-container">
+        <!-- Sidebar -->
+        <aside class="sidebar">
+            <div class="logo">
+                <i class="ph-fill ph-fingerprint-simple" style="font-size: 32px; color: var(--primary);"></i>
+                <h2>SmartGuard</h2>
+            </div>
+            <nav>
+                <a href="#" class="nav-link active" data-target="dashboard-view">
+                    <i class="ph ph-squares-four"></i> Dashboard
+                </a>
+                <a href="#" class="nav-link">
+                    <i class="ph ph-users"></i> Users
+                </a>
+                <a href="#" class="nav-link">
+                    <i class="ph ph-chart-bar"></i> Reports
+                </a>
+                <a href="#" class="nav-link">
+                    <i class="ph ph-gear"></i> Settings
+                </a>
+            </nav>
+
+            <div class="sidebar-footer"
+                style="margin-top: auto; padding-top: 2rem; border-top: 1px solid var(--border);">
+
+                <a href="#" onclick="logout()" class="nav-link" style="color: #f44336; margin-bottom: 20px;">
+                    <i class="ph ph-sign-out"></i> Logout
+                </a>
+
+                <div style="display: flex; justify-content: space-between; align-items: center;">
+                    <span style="color: var(--text-muted); font-size: 0.9rem;">Dark Mode</span>
+                    <label class="switch">
+                        <input type="checkbox" id="theme-toggle" checked>
+                        <span class="slider round"></span>
+                    </label>
+                </div>
+            </div>
+        </aside>
+
+        <!-- Main Content -->
+        <main>
+            <!-- Dashboard View -->
+            <div id="dashboard-view" class="view-section">
+                <header>
+                    <h1>Attendance Overview</h1>
+                    <div class="header-right">
+                        <div class="info-badge time-badge" id="live-clock">--:--:--</div>
+                    </div>
+                </header>
+
+                <!-- Stats Cards -->
+                <div class="stats-grid">
+                    <div class="card stat-card stat-card-blue">
+                        <h3>Total Scans Today</h3>
+                        <div class="value" id="stats-total">0</div>
+                        <div class="trend">+12% vs yesterday</div>
+                    </div>
+                    <div class="card stat-card stat-card-orange">
+                        <h3>Last Access ID</h3>
+                        <div class="value" id="stats-last-id">--</div>
+                        <div class="trend">Just now</div>
+                    </div>
+                    <div class="card stat-card stat-card-purple">
+                        <h3>Active Users</h3>
+                        <div class="value">24</div>
+                        <div class="trend">Registered IDs</div>
+                    </div>
+                </div>
+
+                <!-- Activity Chart Section -->
+                <div class="card" style="margin-bottom: 20px;">
+                    <div
+                        style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
+                        <h3>Activity Statistics</h3>
+                        <div class="chart-controls">
+                            <button class="btn-chart active" onclick="setChartMode('day')">Today</button>
+                            <button class="btn-chart" onclick="setChartMode('month')">Month</button>
+                            <button class="btn-chart" onclick="setChartMode('year')">Year</button>
+                        </div>
+                    </div>
+                    <div style="height: 250px;">
+                        <canvas id="activityChart"></canvas>
+                    </div>
+                </div>
+
+                <!-- Calendar Section -->
+                <div class="card calendar-card" style="margin-bottom: 20px;">
+                    <div class="calendar-header">
+                        <h3 id="calendar-month-year">Month Year</h3>
+                        <div class="calendar-nav">
+                            <button id="prev-month">&lt;</button>
+                            <button id="next-month">&gt;</button>
+                        </div>
+                    </div>
+                    <div class="calendar-grid" id="calendar-grid">
+                        <!-- Weekdays Header -->
+                        <div class="weekday">Mon</div>
+                        <div class="weekday">Tue</div>
+                        <div class="weekday">Wed</div>
+                        <div class="weekday">Thu</div>
+                        <div class="weekday">Fri</div>
+                        <div class="weekday">Sat</div>
+                        <div class="weekday">Sun</div>
+                        <!-- Days will be generated by JS -->
+                    </div>
+                </div>
+
+                <!-- Recent Activity Table -->
+                <div class="card table-card">
+                    <div class="card-header"
+                        style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 15px; margin-bottom: 20px;">
+                        <h3 id="logs-title" style="white-space: nowrap; margin: 0;">Recent Access Logs (Live)</h3>
+                        <div class="header-actions">
+                            <input type="text" id="status-search" placeholder="Search ID or Name..." />
+
+                            <button class="btn-refresh" id="btn-view-live" style="display: none;"
+                                onclick="enableLiveMode()">Live</button>
+
+                            <button class="btn-refresh" onclick="exportToExcel()">
+                                <span>Export</span>
+                            </button>
+                            <button class="btn-refresh" onclick="fetchLogs()">
+                                <span>Refresh</span>
+                            </button>
+                        </div>
+                    </div>
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>User ID</th>
+                                <th>Time</th>
+                                <th>Date</th>
+                                <th>Status</th>
+                            </tr>
+                        </thead>
+                        <tbody id="logs-body">
+                            <!-- Data will be injected here -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- User Management Section (Integrated) -->
+            <div style="margin-top: 50px; margin-bottom: 40px;">
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+                    <h2 style="font-size: 1.5rem; color: var(--text-main); margin: 0;">User Management</h2>
+                    <button class="btn-primary" onclick="openUserModal()">+ Add New User</button>
+                </div>
+
+                <div class="card table-card">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th style="width: 80px; text-align: center;">ID</th>
+                                <th>Full Name</th>
+                                <th>Position</th>
+                                <th>Gender</th>
+                                <th style="text-align: center;">Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody id="users-body">
+                            <!-- Users will be injected here -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+    </div> <!-- End Dashboard View -->
+
+    <!-- User Modal (Restored) -->
+    <!-- User Modal (Restored) -->
+    <!-- User Modal (Restored) -->
+    <div id="user-modal" class="modal"
+        style="display: none; position: fixed; z-index: 1000; left: 0; top: 0; width: 100%; height: 100%; overflow: auto; background-color: rgba(0,0,0,0.6); backdrop-filter: blur(4px);">
+        <div class="modal-content"
+            style="background-color: var(--card-bg); margin: 5% auto; padding: 30px; border: 1px solid var(--border); width: 90%; max-width: 550px; border-radius: 16px; color: var(--text-main); box-shadow: 0 20px 50px rgba(0,0,0,0.3);">
+            <h2 style="margin-bottom: 25px; font-size: 1.5rem; text-align: center;">Register New User</h2>
+            <form id="user-form">
+
+                <div style="display: grid; grid-template-columns: 1fr 2fr; gap: 15px; margin-bottom: 20px;">
+                    <div class="form-group">
+                        <label
+                            style="display: block; margin-bottom: 8px; font-weight: 500; color: var(--text-muted);">ID
+                            (1-127)</label>
+                        <input type="number" id="user-id" required
+                            style="width: 100%; padding: 10px 12px; background: var(--bg-dark); border: 1px solid var(--border); color: white; border-radius: 8px; font-size: 1rem; outline: none;">
+                    </div>
+                    <div class="form-group">
+                        <label
+                            style="display: block; margin-bottom: 8px; font-weight: 500; color: var(--text-muted);">Full
+                            Name</label>
+                        <input type="text" id="user-name" required
+                            style="width: 100%; padding: 10px 12px; background: var(--bg-dark); border: 1px solid var(--border); color: white; border-radius: 8px; font-size: 1rem; outline: none;">
+                    </div>
+                </div>
+
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin-bottom: 20px;">
+                    <div class="form-group">
+                        <label
+                            style="display: block; margin-bottom: 8px; font-weight: 500; color: var(--text-muted);">Position</label>
+                        <input type="text" id="user-position"
+                            style="width: 100%; padding: 10px 12px; background: var(--bg-dark); border: 1px solid var(--border); color: white; border-radius: 8px; font-size: 1rem; outline: none;">
+                    </div>
+                    <div class="form-group">
+                        <label
+                            style="display: block; margin-bottom: 8px; font-weight: 500; color: var(--text-muted);">Gender</label>
+                        <select id="user-gender"
+                            style="width: 100%; padding: 10px 12px; background: var(--bg-dark); border: 1px solid var(--border); color: white; border-radius: 8px; font-size: 1rem; outline: none;">
+                            <option value="Male">Male</option>
+                            <option value="Female">Female</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin-bottom: 20px;">
+                    <div class="form-group">
+                        <label
+                            style="display: block; margin-bottom: 8px; font-weight: 500; color: var(--text-muted);">Year
+                            of Birth</label>
+                        <input type="number" id="user-yob"
+                            style="width: 100%; padding: 10px 12px; background: var(--bg-dark); border: 1px solid var(--border); color: white; border-radius: 8px; font-size: 1rem; outline: none;">
+                    </div>
+                    <div class="form-group">
+                        <label
+                            style="display: block; margin-bottom: 8px; font-weight: 500; color: var(--text-muted);">CCCD
+                            / ID Card</label>
+                        <input type="text" id="user-cccd"
+                            style="width: 100%; padding: 10px 12px; background: var(--bg-dark); border: 1px solid var(--border); color: white; border-radius: 8px; font-size: 1rem; outline: none;">
+                    </div>
+                </div>
+
+                <div class="form-group" style="margin-bottom: 20px;">
+                    <label
+                        style="display: block; margin-bottom: 8px; font-weight: 500; color: var(--text-muted);">Hometown</label>
+                    <input type="text" id="user-hometown"
+                        style="width: 100%; padding: 10px 12px; background: var(--bg-dark); border: 1px solid var(--border); color: white; border-radius: 8px; font-size: 1rem; outline: none;">
+                </div>
+
+                <div class="form-group" style="margin-bottom: 20px;">
+                    <label
+                        style="display: block; margin-bottom: 8px; font-weight: 500; color: var(--text-muted);">Permanent
+                        Address</label>
+                    <input type="text" id="user-address"
+                        style="width: 100%; padding: 10px 12px; background: var(--bg-dark); border: 1px solid var(--border); color: white; border-radius: 8px; font-size: 1rem; outline: none;">
+                </div>
+
+                <div class="form-group" style="margin-bottom: 25px;">
+                    <label
+                        style="display: block; margin-bottom: 8px; font-weight: 500; color: var(--text-muted);">Description
+                        (Notes)</label>
+                    <textarea id="user-desc" rows="2" placeholder="Enter additional details..."
+                        style="width: 100%; padding: 10px 12px; background: var(--bg-dark); border: 1px solid var(--border); color: white; border-radius: 8px; font-size: 1rem; outline: none; resize: vertical;"></textarea>
+                </div>
+
+                <div style="text-align: right; padding-top: 10px; border-top: 1px solid var(--border);">
+                    <button type="button" onclick="closeUserModal()"
+                        style="padding: 10px 20px; background: transparent; color: var(--text-muted); border: none; cursor: pointer; margin-right: 10px; font-weight: 500;">Cancel</button>
+                    <button type="submit"
+                        style="padding: 10px 24px; background: #2196F3; color: white; border: none; border-radius: 8px; cursor: pointer; font-weight: 600; box-shadow: 0 4px 6px rgba(33, 150, 243, 0.3);">Save
+                        User</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+
+    <!-- No separate settings view needed -->
+
+    </main>
+    </div>
+
+    <!-- Toast Container -->
+    <div id="toast-container" style="position: fixed; top: 20px; right: 20px; z-index: 2000;"></div>
+
+    <!-- AI Chat Widget -->
+    <div id="ai-chat-widget">
+        <button id="chat-toggle-btn" onclick="toggleChat()">
+            ✨
+        </button>
+        <div id="chat-box" class="chat-hidden">
+            <div class="chat-header">
+                <div style="display: flex; align-items: center; gap: 10px;">
+                    <span style="font-size: 1.5rem;">🤖</span>
+                    <div>
+                        <h3 style="margin: 0; font-size: 1rem;">Trợ lý AI</h3>
+                    </div>
+                </div>
+                <button onclick="toggleChat()"
+                    style="background: none; border: none; color: white; cursor: pointer; font-size: 1.2rem;">&times;</button>
+            </div>
+            <div id="chat-messages">
+                <div class="message bot-message">Xin chào! Tôi có thể giúp gì cho bạn về dữ liệu chấm công hôm nay?
+                </div>
+            </div>
+            <div class="chat-input-area">
+                <input type="text" id="chat-input" placeholder="Hỏi gì đó..." onkeypress="handleChatInput(event)">
+                <button onclick="sendChatMessage()" id="send-btn">➤</button>
+            </div>
+        </div>
+    </div>
+
+    <script src="script.js"></script>
+</body>
+
+</html>

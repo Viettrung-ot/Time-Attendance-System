@@ -1,0 +1,19 @@
+# Python
+.venv/
+__pycache__/
+*.py[cod]
+*$py.class
+
+# Environment variables
+.env
+
+# Service account keys (Sensitive)
+*.json
+
+# VS Code
+.vscode/
+
+# Project specific
+node_modules/
+dist/
+build/
